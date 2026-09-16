@@ -1,0 +1,67 @@
+from telethon.sync import TelegramClient
+
+# Введіть ваші дані з https://my.telegram.org
+API_ID = 30410278  # Ваш API ID (число)
+API_HASH = '2db98b212cc163d7274c75f95e8193ab'  # Ваш API Hash (рядок)
+
+# Юзернейм або посилання на групу (без символу @)
+GROUP_TARGET = 'GameYechat'
+
+def get_reg_period(user_id: int) -> str:
+    """Оцінює приблизну дату реєстрації акаунта за його Telegram ID."""
+    if user_id < 100_000_000:
+        return "2013-2014"
+    elif user_id < 300_000_000:
+        return "2015-2016"
+    elif user_id < 600_000_000:
+        return "2017-2018"
+    elif user_id < 1_000_000_000:
+        return "2019-2020"
+    elif user_id < 1_800_000_000:
+        return "2021-2022"
+    elif user_id < 5_500_000_000:
+        return "2023-2024"
+    elif user_id < 7_500_000_000:
+        return "2025-2026"
+    else:
+        return "2026+"
+
+def export_members():
+    with TelegramClient('my_session', API_ID, API_HASH) as client:
+        print("Підключення та отримання учасників...")
+        participants = client.get_participants(GROUP_TARGET)
+
+        # -------------------------------------------------------------
+        # 1. Тільки юзернейми з нумерацією (1. @username)
+        # -------------------------------------------------------------
+        with open('usernames_only.txt', 'w', encoding='utf-8') as f_usernames:
+            counter = 1
+            for user in participants:
+                if user.username:
+                    f_usernames.write(f"{counter}. @{user.username}\n")
+                    counter += 1
+
+        # -------------------------------------------------------------
+        # 2. Таблиця зі стовпчиками (№ | ID | РЕЄСТРАЦІЯ | Юзернейм | Ім'я)
+        # -------------------------------------------------------------
+        with open('members_table.txt', 'w', encoding='utf-8') as f_table:
+            # Формуємо заголовок
+            header = f"{'№':<6} | {'ID':<15} | {'РЕЄСТРАЦІЯ':<12} | {'ЮЗЕРНЕЙМ':<25} | {'ІМ`Я ТА ПРІЗВИЩЕ'}\n"
+            f_table.write(header)
+            f_table.write("-" * 85 + "\n")
+
+            for idx, user in enumerate(participants, start=1):
+                user_id = str(user.id)
+                reg_period = get_reg_period(user.id)
+                username = f"@{user.username}" if user.username else "немає"
+                full_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+                
+                # Записуємо рядок з усіма стовпчиками
+                f_table.write(f"{idx:<6} | {user_id:<15} | {reg_period:<12} | {username:<25} | {full_name}\n")
+
+        print("Готово! Збережено 2 файли:")
+        print("1. usernames_only.txt — нумерований список юзернеймів")
+        print("2. members_table.txt — таблиця з нумерацією, ID, датою реєстрації та іменами")
+
+if __name__ == '__main__':
+    export_members()
